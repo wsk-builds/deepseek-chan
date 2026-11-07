@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DeepSeek-chan · Live2D 演示</title>
+  <meta name="description" content="DeepSeekちゃん / 大肥鱼 Live2D 模型演示。可以拉近查看细节，并切换动作、表情和装扮。">
+  <link rel="icon" href="DeepSeek/大肥鱼.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,560;1,9..144,650&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/demo.css">
+</head>
+<body>
+  <div id="stage"></div>
+  <div class="glow" aria-hidden="true"></div>
+  <div class="floor" aria-hidden="true"></div>
+
+  <header>
+    <div class="brand">
+      <p class="kicker">Free Live2D Model</p>
+      <h1>DeepSeek-chan</h1>
+      <p class="sub"><span id="status">正在醒来</span></p>
+    </div>
+    <div class="header-actions">
+      <button type="button" id="panelToggle" aria-expanded="false" aria-controls="panel">动作与装扮</button>
+      <a class="text-link" href="https://github.com/wsk-builds/deepseek-chan">GitHub</a>
+    </div>
+  </header>
+
+  <p class="hint">滚轮对准细节拉近 · 拖拽平移 · 双击看脸</p>
+
+  <aside id="panel" aria-label="模型控制">
+    <div class="panel-head">
+      <h2>动作</h2>
+      <p>手势会先收回，再播切换动画。</p>
+    </div>
+    <div class="group" id="sceneGroup" role="group" aria-label="场景动作">
+      <button type="button" data-scene="idle" aria-pressed="true">待机</button>
+      <button type="button" data-scene="lost" aria-pressed="false">脱捕</button>
+    </div>
+    <div class="group" id="handGroup" role="group" aria-label="手势">
+      <button type="button" data-hand="default" aria-pressed="true">默认手</button>
+      <button type="button" data-hand="raise" aria-pressed="false">举手</button>
+      <button type="button" data-hand="foxtail" aria-pressed="false">狗尾草</button>
+      <button type="button" data-hand="finger" aria-pressed="false">竖食指</button>
+    </div>
+
+    <div class="panel-head">
+      <h2>表情</h2>
+    </div>
+    <div class="group" id="eyeGroup" role="group" aria-label="眼睛">
+      <button type="button" data-eye="normal" aria-pressed="true">默认</button>
+      <button type="button" data-eye="heart" aria-pressed="false">爱心眼</button>
+      <button type="button" data-eye="spiral" aria-pressed="false">圈圈眼</button>
+      <button type="button" data-eye="tight" aria-pressed="false">＞＜</button>
+      <button type="button" data-eye="smug" aria-pressed="false">屑屑眼</button>
+    </div>
+    <div class="group" id="faceGroup">
+      <button type="button" data-toggle="tears" aria-pressed="false">流泪</button>
+      <button type="button" data-toggle="dark" aria-pressed="false">黑脸</button>
+      <button type="button" data-toggle="blush" aria-pressed="false">脸红</button>
+      <button type="button" data-toggle="sweat" aria-pressed="false">流冷汗</button>
+      <button type="button" data-toggle="tooth" aria-pressed="false">兔牙</button>
+      <button type="button" data-toggle="loading" aria-pressed="false">加载</button>
+    </div>
+
+    <div class="panel-head">
+      <h2>装扮</h2>
+    </div>
+    <p class="micro">头部</p>
+    <div class="group" id="headGroup" role="group" aria-label="头部装扮">
+      <button type="button" data-head="none" aria-pressed="true">无</button>
+      <button type="button" data-head="basin" aria-pressed="false">钢盆</button>
+      <button type="button" data-head="glasses" aria-pressed="false">黑框眼镜</button>
+      <button type="button" data-head="monocle" aria-pressed="false">单片眼镜</button>
+    </div>
+    <p class="micro">体型</p>
+    <div class="group" id="bodyGroup" role="group" aria-label="体型">
+      <button type="button" data-body="0" aria-pressed="true">标准</button>
+      <button type="button" data-body="0.4" aria-pressed="false">体型一</button>
+      <button type="button" data-body="1" aria-pressed="false">体型二</button>
+    </div>
+    <div class="group" id="clothGroup">
+      <button type="button" data-toggle="skirt" aria-pressed="false">裙长</button>
+      <button type="button" data-toggle="chest" aria-pressed="false">胸口衣服</button>
+      <button type="button" data-toggle="shoes" aria-pressed="false">鞋子</button>
+      <button type="button" data-toggle="tail" aria-pressed="false">尾巴</button>
+      <button type="button" data-toggle="lean" aria-pressed="false">前倾</button>
+    </div>
+    <button type="button" id="resetLook" class="quiet">恢复默认表情和装扮</button>
+    <p class="legal">镜头跟随指针。Live2D Cubism Core 由官方 CDN 提供。</p>
+  </aside>
+
+  <div id="lens" aria-label="镜头">
+    <div class="lens-row">
+      <button type="button" id="zoomOut">拉远</button>
+      <input id="zoomSlider" type="range" min="70" max="800" value="100" aria-label="缩放">
+      <button type="button" id="zoomIn">拉近</button>
+      <span id="zoomLabel">100%</span>
+    </div>
+    <div class="lens-row presets">
+      <button type="button" data-frame="full">全身</button>
+      <button type="button" data-frame="bust">上半身</button>
+      <button type="button" data-frame="face">面部</button>
+      <button type="button" data-frame="eyes">眼瞳</button>
+      <button type="button" id="resetView">复位</button>
+    </div>
+  </div>
+
+  <div id="boot" role="status">
+    <img src="DeepSeek/大肥鱼.png" alt="">
+    <p class="boot-kicker">DeepSeek-chan</p>
+    <p id="bootText">正在载入 4096 贴图</p>
+    <div class="bar"><span id="bootBar"></span></div>
+    <p id="bootPct">0%</p>
+  </div>
+
+  <script src="https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pixi.js@6.5.10/dist/browser/pixi.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display@0.4.0/dist/cubism4.min.js"></script>
+  <script src="assets/demo.js"></script>
+</body>
+</html>

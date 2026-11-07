@@ -1,0 +1,85 @@
+{
+	"Version": 3,
+	"FileReferences": {
+		"Moc": "大肥鱼.moc3",
+		"Textures": [
+			"大肥鱼.4096/texture_00.png",
+			"大肥鱼.4096/texture_01.png",
+			"大肥鱼.4096/texture_02.png",
+			"大肥鱼.4096/texture_03.png",
+			"大肥鱼.4096/texture_04.png"
+		],
+		"Physics": "大肥鱼.physics3.json",
+		"DisplayInfo": "大肥鱼.cdi3.json",
+		"Motions": {
+			"Idle": [
+				{
+					"File": "Animation/IDLE.motion3.json",
+					"FadeInTime": 0.6,
+					"FadeOutTime": 0.4
+				}
+			],
+			"Lost": [
+				{
+					"File": "Animation/脱捕.motion3.json",
+					"FadeInTime": 0.35,
+					"FadeOutTime": 0.35
+				}
+			],
+			"ToRaise": [
+				{
+					"File": "WebMotion/to-raise.motion3.json",
+					"FadeInTime": 0.12,
+					"FadeOutTime": 0.15
+				}
+			],
+			"FromRaise": [
+				{
+					"File": "WebMotion/from-raise.motion3.json",
+					"FadeInTime": 0.12,
+					"FadeOutTime": 0.15
+				}
+			],
+			"ToFoxtail": [
+				{
+					"File": "WebMotion/to-foxtail.motion3.json",
+					"FadeInTime": 0.12,
+					"FadeOutTime": 0.15
+				}
+			],
+			"FromFoxtail": [
+				{
+					"File": "WebMotion/from-foxtail.motion3.json",
+					"FadeInTime": 0.12,
+					"FadeOutTime": 0.15
+				}
+			],
+			"ToFinger": [
+				{
+					"File": "WebMotion/to-finger.motion3.json",
+					"FadeInTime": 0.12,
+					"FadeOutTime": 0.15
+				}
+			],
+			"FromFinger": [
+				{
+					"File": "WebMotion/from-finger.motion3.json",
+					"FadeInTime": 0.12,
+					"FadeOutTime": 0.15
+				}
+			]
+		}
+	},
+	"Groups": [
+		{
+			"Target": "Parameter",
+			"Name": "EyeBlink",
+			"Ids": ["ParamEyeROpen", "ParamEyeLOpen"]
+		},
+		{
+			"Target": "Parameter",
+			"Name": "LipSync",
+			"Ids": []
+		}
+	]
+}
