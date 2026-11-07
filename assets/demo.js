@@ -173,7 +173,6 @@
     setDelta(core, "Clothes3", state.chest ? 1 : 0);
     setDelta(core, "Clothes4", state.shoes ? 1 : 0);
     setDelta(core, "Clothes5", state.tail ? -1 : 0);
-    setDelta(core, "LeanInput", state.lean ? -30 : 0);
 
     const blink = blinkAmount((performance.now() - startedAt) / 1000);
     if (blink < 0.985 && params.ParamEyeLOpen) {
@@ -186,6 +185,86 @@
       if (params.AngleX) core.addParameterValueById("AngleX", focus.x * 30);
       if (params.AngleY) core.addParameterValueById("AngleY", focus.y * 30);
       if (params.AngleZ) core.addParameterValueById("AngleZ", focus.x * focus.y * -30);
+    }
+  }
+
+  // LeanInput is a physics input. It has to be written before the pose is saved,
+  // otherwise the solver runs on the previous value and the lean never shows up.
+  function applyLean() {
+    setDelta(model.internalModel.coreModel, "LeanInput", state.lean ? -30 : 0);
+  }
+
+  function repairNoseHighlight(model) {
+    const core = model.internalModel.coreModel;
+    const drawables = core._model.drawables;
+    const multiply = drawables.multiplyColors;
+    const screen = drawables.screenColors;
+    const byTexture = {};
+    for (let i = 0; i < core.getDrawableCount(); i++) {
+      if (multiply[i * 4] > 0.04) continue;
+      if (screen[i * 4] < 0.94 || screen[i * 4 + 1] < 0.9 || screen[i * 4 + 2] < 0.9) continue;
+      const index = drawables.textureIndices[i];
+      (byTexture[index] || (byTexture[index] = [])).push(i);
+    }
+    Object.keys(byTexture).forEach(function (key) {
+      const texture = model.textures[key];
+      if (!texture) return;
+      const source = texture.baseTexture.resource.source;
+      const width = source.naturalWidth || source.width;
+      const height = source.naturalHeight || source.height;
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const context = canvas.getContext("2d", { willReadFrequently: true });
+      context.drawImage(source, 0, 0);
+      const image = context.getImageData(0, 0, width, height);
+      const pixels = image.data;
+      byTexture[key].forEach(function (drawable) {
+        const uvs = core.getDrawableVertexUvs(drawable);
+        const indices = core.getDrawableVertexIndices(drawable);
+        for (let t = 0; t < indices.length; t += 3) {
+          const a = indices[t] * 2;
+          const b = indices[t + 1] * 2;
+          const c = indices[t + 2] * 2;
+          clearBlackTriangle(pixels, width, height,
+            uvs[a], 1 - uvs[a + 1], uvs[b], 1 - uvs[b + 1], uvs[c], 1 - uvs[c + 1]);
+        }
+      });
+      context.putImageData(image, 0, 0);
+      texture.baseTexture.resource.source = canvas;
+      texture.baseTexture.update();
+      const uploaded = texture.baseTexture._glTextures;
+      if (uploaded) Object.keys(uploaded).forEach(function (id) { delete uploaded[id]; });
+    });
+  }
+
+  function clearBlackTriangle(pixels, width, height, u0, v0, u1, v1, u2, v2) {
+    const ax = u0 * width;
+    const ay = v0 * height;
+    const bx = u1 * width;
+    const by = v1 * height;
+    const cx = u2 * width;
+    const cy = v2 * height;
+    const minX = Math.max(0, Math.floor(Math.min(ax, bx, cx)));
+    const maxX = Math.min(width - 1, Math.ceil(Math.max(ax, bx, cx)));
+    const minY = Math.max(0, Math.floor(Math.min(ay, by, cy)));
+    const maxY = Math.min(height - 1, Math.ceil(Math.max(ay, by, cy)));
+    const area = (bx - ax) * (cy - ay) - (by - ay) * (cx - ax);
+    if (Math.abs(area) < 0.5) return;
+    for (let y = minY; y <= maxY; y++) {
+      for (let x = minX; x <= maxX; x++) {
+        const px = x + 0.5;
+        const py = y + 0.5;
+        const w0 = (bx - ax) * (py - ay) - (by - ay) * (px - ax);
+        const w1 = (cx - bx) * (py - by) - (cy - by) * (px - bx);
+        const w2 = (ax - cx) * (py - cy) - (ay - cy) * (px - cx);
+        const inside = (w0 >= 0 && w1 >= 0 && w2 >= 0) || (w0 <= 0 && w1 <= 0 && w2 <= 0);
+        if (!inside) continue;
+        const offset = (y * width + x) * 4;
+        if (pixels[offset + 3] > 8 && pixels[offset] < 28 && pixels[offset + 1] < 28 && pixels[offset + 2] < 28) {
+          pixels[offset + 3] = 0;
+        }
+      }
     }
   }
 
@@ -547,6 +626,8 @@
     }
     app.stage.addChild(model);
     captureParams(model.internalModel.coreModel);
+    repairNoseHighlight(model);
+    model.internalModel.on("afterMotionUpdate", applyLean);
     model.internalModel.on("beforeModelUpdate", applyLook);
     bindStage(app.view);
     app.renderer.on("resize", layout);
